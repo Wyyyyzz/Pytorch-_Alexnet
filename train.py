@@ -13,10 +13,6 @@ from torchvision import datasets
 
 
 
-#使用GPU
-device = "cuda" if torch.cuda.is_available() else 'cpu'
-model = AlexNet().to(device)
-print(device)
 
 
 
@@ -46,6 +42,10 @@ val_dataset= datasets.CIFAR10('./', train=False, download=True, transform=val_tr
 
 train_datalodar = DataLoader(train_dataset,batch_size=32,shuffle=True)#打乱
 val_datalodar = DataLoader(val_dataset,batch_size=32,shuffle=True)
+
+device = "cuda"
+model = AlexNet().to(device)
+print(device)
 
 #损失函数:这里用交叉熵
 loss_function = nn.CrossEntropyLoss()
@@ -93,8 +93,10 @@ def val(dataloader, model, loss_function):  # 传入数据，模型，损失,,�
             output = model(image)
             cur_loss = loss_function(output, y)  # 将真实值和预测值进行误差分析
             _, pred = torch.max(output, axis=1)  # 取出准确率最高的值
-            cur_acc = torch.sum(y == pred / output.shape[0])  # 累加精确率
-            n+=1
+            cur_acc = torch.sum(y == pred) / output.shape[0]
+            loss+=cur_loss.item()
+            current+=cur_acc.item()# 累加精确率
+            n=n+1
 
 
     val_loss = loss / n
@@ -113,7 +115,7 @@ epoch=10#训练轮次
 min_acc =0
 for t in range(epoch):
     lr_scheduler.step()
-    print(f"[epoch %d]{t+1}\n---------")
+    print(f"[epoch %d]{t+1}")
     train_loss,train_acc=train(train_datalodar,model,loss_function,optimizer)#把训练loss，精确度导出
     val_loss,val_acc=val(val_datalodar,model,loss_function)#验证同理
 
@@ -129,35 +131,31 @@ for t in range(epoch):
             os.mkdir("save_model")
         min_acc= val_acc  #如果最小权重小于测试，保存
         print(f'save best model , in {t+1}epoch')
-        torch.save(model.state_dict(),"save_modle/best_model.pth")
+        torch.save(model.state_dict(),"save_model/best_model.pth")
 
     #保存最后一轮权重文件
     if t==epoch -1:
-        torch.save(model.state_dict(), "save_modle/last_model.pth")
+        torch.save(model.state_dict(), "save_model/last_model.pth")
 
 
 print('finished training')
 
 
 ##画图判断loss值
-def matplot_loss(train_loss,val_loss):
-    plt.plot(train_loss,label="train loss")
-    plt.plot(val_loss, label="val loss")
-    plt.lgend(loc="best")
-    plt.ylabel('loss value')
-    plt.xlabel("epoch")
-    plt.title("loss值对比图")
-    plt.show()
+plt.plot(train_loss,label="train loss")
+plt.plot(val_loss, label="val loss")
+plt.lgend(loc="best")
+plt.ylabel('loss value')
+plt.xlabel("epoch")
+plt.title("loss值对比图")
+plt.show()
 
 
-##画图判断acc值
-def matplot_acc(train_acc,val_acc):
-    plt.plot(train_acc,label="train acc")
-    plt.plot(val_acc, label="val acc")
-    plt.lgend(loc="best")
-    plt.ylabel('acc value')
-    plt.xlabel("epoch")
-    plt.title("acc值对比图")
-    plt.show()
-
-print(list(model.parameters()))
+##画图判断acc
+plt.plot(train_acc,label="train acc")
+plt.plot(val_acc, label="val acc")
+plt.lgend(loc="best")
+plt.ylabel('acc value')
+plt.xlabel("epoch")
+plt.title("acc值对比图")
+plt.show()
