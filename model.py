@@ -37,11 +37,12 @@ class AlexNet(nn.Module):
         x = ff.dropout(x, p=0.5),
         x = self.f8(x),
         x = ff.dropout(x, p=0.5),
+        x = self.f9(x),
         return x
 
-if __import__=="__main__":
+if __name__=="__main__":
     x = torch.rand([1,3,224,224])
     model = AlexNet()
-    y = model
+    y = model(x)
 
 
